@@ -22,12 +22,12 @@ import (
 // Send any text message to the bot after the bot has been started
 
 func main() {
-	err := os.MkdirAll("/data", os.ModeDir)
+	err := os.MkdirAll("/db", os.ModeDir)
 	if err != nil {
 		log.Fatalf("can't create folder for db: %s", err.Error())
 	}
 
-	db, err := sql.Open("sqlite", "/data/botdb.db")
+	db, err := sql.Open("sqlite", "/db/botdb.db")
 	defer db.Close()
 	if err != nil {
 		log.Fatalf("can't create db connection: %s", err.Error())
