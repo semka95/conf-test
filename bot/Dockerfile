@@ -7,7 +7,6 @@ RUN apk update && apk upgrade && \
 WORKDIR /app
 
 COPY go.* ./
-COPY ./database/schema.sql ./
 RUN go mod download
 
 COPY . .
@@ -22,6 +21,8 @@ RUN apk update && apk upgrade && \
     mkdir /app 
 
 WORKDIR /app 
+
+COPY ./database/schema.sql ./
 
 EXPOSE 2000
 
