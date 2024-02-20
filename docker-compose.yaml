@@ -1,0 +1,47 @@
+version: '3.7'
+
+services:
+  backend:
+    build: ./bot
+    container_name: conf-bot
+    env_file:
+      - ./bot/.env
+    ports:
+      - "2000:2000"
+    volumes:
+      - db:/db
+    depends_on:
+      - proxy
+
+  proxy:
+    image: nginxproxy/nginx-proxy:1.5.1-alpine
+    restart: always
+    ports:
+      - 80:80
+      - 443:443
+    # labels:
+    #   com.github.jrcs.letsencrypt_nginx_proxy_companion.nginx_proxy: "true"
+    volumes:
+      - conf:/etc/nginx/conf.d
+      - vhost:/etc/nginx/vhost.d
+      - html:/usr/share/nginx/html
+      - certs:/etc/nginx/certs:ro
+      - /var/run/docker.sock:/tmp/docker.sock:ro
+
+  letsencrypt-companion:
+    image: nginxproxy/acme-companion:2.2.10
+    restart: always
+    volumes:
+      - certs:/etc/nginx/certs:rw
+      - acme:/etc/acme.sh
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    depends_on:
+      - proxy
+
+volumes:
+  db:
+  conf:
+  vhost:
+  html:
+  certs:
+  acme:
