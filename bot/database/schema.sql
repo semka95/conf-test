@@ -7,7 +7,7 @@ CREATE TABLE IF NOT EXISTS report(
     url text CHECK (LENGTH(url) <= 100) UNIQUE NOT NULL,
     title text CHECK (LENGTH(title) <= 50) NOT NULL,
     starting_at datetime NOT NULL,
-    duration_minutes integer NOT NULL CHECK (duration <= 720),
+    duration_minutes integer NOT NULL CHECK (duration_minutes <= 720),
     reporters text CHECK (LENGTH(reporters) <= 50) NOT NULL,
     conference_id integer NOT NULL,
     status text CHECK (status IN ('active', 'inactive')) NOT NULL,
