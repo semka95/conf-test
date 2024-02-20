@@ -7,6 +7,7 @@ RUN apk update && apk upgrade && \
 WORKDIR /app
 
 COPY go.* ./
+COPY ./database/schema.sql ./
 RUN go mod download
 
 COPY . .
