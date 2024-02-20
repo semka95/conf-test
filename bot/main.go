@@ -6,6 +6,7 @@ import (
 	"database/sql"
 	"fmt"
 	"io"
+	"log"
 	"math/rand"
 	"net/http"
 	"os"
@@ -21,17 +22,41 @@ import (
 // Send any text message to the bot after the bot has been started
 
 func main() {
-	os.MkdirAll("/data", os.ModeDir)
-	db, _ := sql.Open("sqlite", "/data/botdb.db")
-	defer db.Close()
-	schema, _ := os.OpenFile("schema.sql", os.O_RDONLY, os.ModeExclusive)
-	query, _ := io.ReadAll(schema)
-	schema.Close()
-	db.Exec(string(query))
+	err := os.MkdirAll("/data", os.ModeDir)
+	if err != nil {
+		log.Fatalf("can't create folder for db: %s", err.Error())
+	}
 
-	stmt, _ := database.Prepare(context.Background(), db)
+	db, err := sql.Open("sqlite", "/data/botdb.db")
+	defer db.Close()
+	if err != nil {
+		log.Fatalf("can't create db connection: %s", err.Error())
+	}
+
+	schema, err := os.OpenFile("schema.sql", os.O_RDONLY, os.ModeExclusive)
+	if err != nil {
+		log.Fatalf("can't open schema file: %s", err.Error())
+	}
+	defer schema.Close()
+
+	query, err := io.ReadAll(schema)
+	if err != nil {
+		log.Fatalf("can't read schema file: %s", err.Error())
+	}
+	schema.Close()
+
+	_, err = db.Exec(string(query))
+	if err != nil {
+		log.Fatalf("can't create tables: %s", err.Error())
+	}
+
+	stmt, err := database.Prepare(context.Background(), db)
 	defer stmt.Close()
-	stmt.CreateReport(context.Background(), database.CreateReportParams{
+	if err != nil {
+		log.Fatalf("can't create prepare statement: %s", err.Error())
+	}
+
+	err = stmt.CreateReport(context.Background(), database.CreateReportParams{
 		Url:             "test" + strconv.Itoa(rand.Int()),
 		Title:           "12345",
 		StartingAt:      time.Now(),
@@ -40,8 +65,14 @@ func main() {
 		ConferenceID:    1,
 		Status:          "active",
 	})
+	if err != nil {
+		log.Fatalf("can't insert report in db: %s", err.Error())
+	}
 
-	reports, _ := stmt.GetAllReports(context.Background())
+	reports, err := stmt.GetAllReports(context.Background())
+	if err != nil {
+		log.Fatalf("can't fetch reports: %s", err.Error())
+	}
 	for i, v := range reports {
 		fmt.Printf("%d. url = %s, title = %s, starting at = %s, duration = %d, reporters = %s, conference id = %d, status = %s\n", i, v.Url, v.Title, v.StartingAt.String(), v.DurationMinutes, v.Reporters, v.ConferenceID, v.Status)
 	}
