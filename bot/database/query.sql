@@ -1,6 +1,6 @@
 -- name: CreateReport :exec
-INSERT INTO report(url, title, starting_at, duration_minutes, reporters, conference_id, status)
-    VALUES (?, ?, ?, ?, ?, ?, ?);
+INSERT INTO report(url, title, starting_at, duration_minutes, reporters, status)
+    VALUES (?, ?, ?, ?, ?, ?);
 
 -- name: GetAllReports :many
 SELECT
@@ -10,7 +10,7 @@ SELECT
     reporters,
     url
 FROM report
-WHERE conference_id = ?;
+WHERE starting_at >= ?;
 
 -- name: GetAllRatings :many
 SELECT
@@ -24,7 +24,7 @@ FROM
     LEFT JOIN report ON rating.report_id = report.id
     LEFT JOIN user ON rating.user_id = user.telegram_id
 WHERE
-    report.conference_id = ?
+    report.starting_at >= ?
     AND rating.rating_type = 'score'
     AND user.id_data IS NOT NULL;
 
@@ -36,6 +36,20 @@ INSERT INTO favorite_reports(user_id, report_id)
 DELETE FROM favorite_reports
 WHERE user_id = ?
     AND report_id = ?;
+
+-- name: GetFavoriteReports :many
+SELECT
+    report.starting_at,
+    report.duration_minutes,
+    report.title,
+    report.reporters,
+    report.url
+FROM
+    favorite_reports
+    LEFT JOIN report ON favorite_reports.report_id = report.report_id
+    LEFT JOIN user ON favorite_reports.user_id = user.telegram_id
+WHERE
+    favorite_reports.user_id = ? -- TODO: filter deleted reports
 
 -- name: UpdateUserData :exec
 UPDATE
@@ -62,7 +76,7 @@ FROM
     LEFT JOIN user ON rating.user_id = user.telegram_id
 WHERE
     user.telegram_id = ?
-    AND report.conference_id = ?;
+    AND report.starting_at >= ?;
 
 -- name: GetAllUserReportsNoScore :many
 SELECT
@@ -74,7 +88,7 @@ SELECT
 FROM
     report
 WHERE
-    report.conference_id = ?
+    report.starting_at >= ?
     AND id NOT IN (
         SELECT
             report_id

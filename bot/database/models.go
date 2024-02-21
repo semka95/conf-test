@@ -9,10 +9,6 @@ import (
 	"time"
 )
 
-type Conference struct {
-	ID int64
-}
-
 type FavoriteReport struct {
 	UserID   int64
 	ReportID int64
@@ -35,7 +31,6 @@ type Report struct {
 	StartingAt      time.Time
 	DurationMinutes int64
 	Reporters       string
-	ConferenceID    int64
 	Status          string
 }
 

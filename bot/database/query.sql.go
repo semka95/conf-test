@@ -53,8 +53,8 @@ func (q *Queries) CreateRating(ctx context.Context, arg CreateRatingParams) erro
 }
 
 const createReport = `-- name: CreateReport :exec
-INSERT INTO report(url, title, starting_at, duration_minutes, reporters, conference_id, status)
-    VALUES (?, ?, ?, ?, ?, ?, ?)
+INSERT INTO report(url, title, starting_at, duration_minutes, reporters, status)
+    VALUES (?, ?, ?, ?, ?, ?)
 `
 
 type CreateReportParams struct {
@@ -63,7 +63,6 @@ type CreateReportParams struct {
 	StartingAt      time.Time
 	DurationMinutes int64
 	Reporters       string
-	ConferenceID    int64
 	Status          string
 }
 
@@ -74,7 +73,6 @@ func (q *Queries) CreateReport(ctx context.Context, arg CreateReportParams) erro
 		arg.StartingAt,
 		arg.DurationMinutes,
 		arg.Reporters,
-		arg.ConferenceID,
 		arg.Status,
 	)
 	return err
@@ -92,7 +90,7 @@ FROM
     LEFT JOIN report ON rating.report_id = report.id
     LEFT JOIN user ON rating.user_id = user.telegram_id
 WHERE
-    report.conference_id = ?
+    report.starting_at >= ?
     AND rating.rating_type = 'score'
     AND user.id_data IS NOT NULL
 `
@@ -105,8 +103,8 @@ type GetAllRatingsRow struct {
 	Notes             sql.NullString
 }
 
-func (q *Queries) GetAllRatings(ctx context.Context, conferenceID int64) ([]GetAllRatingsRow, error) {
-	rows, err := q.query(ctx, q.getAllRatingsStmt, getAllRatings, conferenceID)
+func (q *Queries) GetAllRatings(ctx context.Context, startingAt time.Time) ([]GetAllRatingsRow, error) {
+	rows, err := q.query(ctx, q.getAllRatingsStmt, getAllRatings, startingAt)
 	if err != nil {
 		return nil, err
 	}
@@ -142,7 +140,7 @@ SELECT
     reporters,
     url
 FROM report
-WHERE conference_id = ?
+WHERE starting_at >= ?
 `
 
 type GetAllReportsRow struct {
@@ -153,8 +151,8 @@ type GetAllReportsRow struct {
 	Url             string
 }
 
-func (q *Queries) GetAllReports(ctx context.Context, conferenceID int64) ([]GetAllReportsRow, error) {
-	rows, err := q.query(ctx, q.getAllReportsStmt, getAllReports, conferenceID)
+func (q *Queries) GetAllReports(ctx context.Context, startingAt time.Time) ([]GetAllReportsRow, error) {
+	rows, err := q.query(ctx, q.getAllReportsStmt, getAllReports, startingAt)
 	if err != nil {
 		return nil, err
 	}
@@ -195,12 +193,12 @@ FROM
     LEFT JOIN user ON rating.user_id = user.telegram_id
 WHERE
     user.telegram_id = ?
-    AND report.conference_id = ?
+    AND report.starting_at >= ?
 `
 
 type GetAllUserRatingsParams struct {
-	TelegramID   int64
-	ConferenceID int64
+	TelegramID int64
+	StartingAt time.Time
 }
 
 type GetAllUserRatingsRow struct {
@@ -212,7 +210,7 @@ type GetAllUserRatingsRow struct {
 }
 
 func (q *Queries) GetAllUserRatings(ctx context.Context, arg GetAllUserRatingsParams) ([]GetAllUserRatingsRow, error) {
-	rows, err := q.query(ctx, q.getAllUserRatingsStmt, getAllUserRatings, arg.TelegramID, arg.ConferenceID)
+	rows, err := q.query(ctx, q.getAllUserRatingsStmt, getAllUserRatings, arg.TelegramID, arg.StartingAt)
 	if err != nil {
 		return nil, err
 	}
@@ -250,7 +248,7 @@ SELECT
 FROM
     report
 WHERE
-    report.conference_id = ?
+    report.starting_at >= ?
     AND id NOT IN (
         SELECT
             report_id
@@ -261,8 +259,8 @@ WHERE
 `
 
 type GetAllUserReportsNoScoreParams struct {
-	ConferenceID int64
-	UserID       int64
+	StartingAt time.Time
+	UserID     int64
 }
 
 type GetAllUserReportsNoScoreRow struct {
@@ -274,7 +272,7 @@ type GetAllUserReportsNoScoreRow struct {
 }
 
 func (q *Queries) GetAllUserReportsNoScore(ctx context.Context, arg GetAllUserReportsNoScoreParams) ([]GetAllUserReportsNoScoreRow, error) {
-	rows, err := q.query(ctx, q.getAllUserReportsNoScoreStmt, getAllUserReportsNoScore, arg.ConferenceID, arg.UserID)
+	rows, err := q.query(ctx, q.getAllUserReportsNoScoreStmt, getAllUserReportsNoScore, arg.StartingAt, arg.UserID)
 	if err != nil {
 		return nil, err
 	}

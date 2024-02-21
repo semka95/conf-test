@@ -1,7 +1,3 @@
-CREATE TABLE IF NOT EXISTS conference(
-    id integer PRIMARY KEY
-);
-
 CREATE TABLE IF NOT EXISTS report(
     id integer PRIMARY KEY,
     url text CHECK (LENGTH(url) <= 100) UNIQUE NOT NULL,
@@ -9,20 +5,16 @@ CREATE TABLE IF NOT EXISTS report(
     starting_at datetime NOT NULL,
     duration_minutes integer NOT NULL CHECK (duration_minutes <= 720),
     reporters text CHECK (LENGTH(reporters) <= 50) NOT NULL,
-    conference_id integer NOT NULL,
-    status text CHECK (status IN ('active', 'inactive')) NOT NULL,
-    FOREIGN KEY (conference_id) REFERENCES conference(id)
+    status text CHECK (status IN ('active', 'inactive')) NOT NULL
 );
-
-CREATE INDEX IF NOT EXISTS idx_report_conference_id ON report(conference_id);
 
 CREATE TABLE IF NOT EXISTS rating(
     id integer PRIMARY KEY,
     report_id integer NOT NULL,
     user_id integer NOT NULL,
     rating_type text CHECK (rating_type IN ('score', 'not_present', 'no_comments')) NOT NULL,
-    content_score integer,
-    presentation_score integer,
+    content_score integer CHECK (content_score BETWEEN 1 AND 5),
+    presentation_score integer CHECK (presentation_score BETWEEN 1 AND 5),
     notes text CHECK (LENGTH(notes) <= 200),
     FOREIGN KEY (report_id) REFERENCES report(id),
     FOREIGN KEY (user_id) REFERENCES user (telegram_id)
