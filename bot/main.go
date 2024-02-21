@@ -69,12 +69,12 @@ func main() {
 		log.Fatalf("can't insert report in db: %s", err.Error())
 	}
 
-	reports, err := stmt.GetAllReports(context.Background())
+	reports, err := stmt.GetAllReports(context.Background(), 1)
 	if err != nil {
 		log.Fatalf("can't fetch reports: %s", err.Error())
 	}
 	for i, v := range reports {
-		fmt.Printf("%d. url = %s, title = %s, starting at = %s, duration = %d, reporters = %s, conference id = %d, status = %s\n", i, v.Url, v.Title, v.StartingAt.String(), v.DurationMinutes, v.Reporters, v.ConferenceID, v.Status)
+		fmt.Printf("%d. url = %s, title = %s, starting at = %s, duration = %d, reporters = %s\n", i, v.Url, v.Title, v.StartingAt.String(), v.DurationMinutes, v.Reporters)
 	}
 
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt)

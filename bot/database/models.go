@@ -39,7 +39,7 @@ type Report struct {
 	Status          string
 }
 
-type USER struct {
+type User struct {
 	TelegramID int64
 	IDData     sql.NullString
 	Role       string

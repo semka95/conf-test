@@ -25,14 +25,14 @@ CREATE TABLE IF NOT EXISTS rating(
     presentation_score integer,
     notes text CHECK (LENGTH(notes) <= 200),
     FOREIGN KEY (report_id) REFERENCES report(id),
-    FOREIGN KEY (user_id) REFERENCES USER (telegram_id)
+    FOREIGN KEY (user_id) REFERENCES user (telegram_id)
 );
 
 CREATE INDEX IF NOT EXISTS idx_rating_report_id ON rating(report_id);
 
 CREATE INDEX IF NOT EXISTS idx_rating_user_id ON rating(user_id);
 
-CREATE TABLE IF NOT EXISTS USER (
+CREATE TABLE IF NOT EXISTS user (
     telegram_id integer PRIMARY KEY NOT NULL,
     id_data text CHECK (LENGTH(id_data) <= 50),
     role TEXT CHECK (ROLE IN ('admin', 'user')) NOT NULL
@@ -41,7 +41,7 @@ CREATE TABLE IF NOT EXISTS USER (
 CREATE TABLE IF NOT EXISTS favorite_reports(
     user_id integer NOT NULL,
     report_id integer NOT NULL,
-    FOREIGN KEY (user_id) REFERENCES USER (telegram_id),
+    FOREIGN KEY (user_id) REFERENCES user (telegram_id),
     FOREIGN KEY (report_id) REFERENCES report(id)
 );
 
