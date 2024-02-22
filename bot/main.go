@@ -34,6 +34,10 @@ type appEnv struct {
 }
 
 func (app *appEnv) fromArgs() error {
+	if err := envconfig.Process(context.Background(), app); err != nil {
+		return err
+	}
+
 	confStart, err := time.Parse("02/01/2006 15:04:05", os.Getenv("CONF_START"))
 	if err != nil {
 		return fmt.Errorf("can't parse conference start: %w", err)
@@ -51,10 +55,6 @@ func (app *appEnv) fromArgs() error {
 		return fmt.Errorf("can't parse conference rating deadline: %w", err)
 	}
 	app.confratingDeadline = confRatingDeadline
-
-	if err := envconfig.Process(context.Background(), &app); err != nil {
-		return err
-	}
 
 	return nil
 }
