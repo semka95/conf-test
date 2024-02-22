@@ -138,14 +138,14 @@ func main() {
 		URL: app.WebhookAddr.String() + "/webhook",
 	})
 
+	b.RegisterHandler(bot.HandlerTypeMessageText, "/sendReports", bot.MatchTypeExact, getReportsHandler)
+
 	go func() {
 		http.ListenAndServe(":2000", b.WebhookHandler())
 	}()
 
 	// Use StartWebhook instead of Start
 	b.StartWebhook(ctx)
-
-	b.RegisterHandler(bot.HandlerTypeMessageText, "/sendReports", bot.MatchTypeExact, getReportsHandler)
 }
 
 func getReportsHandler(ctx context.Context, b *bot.Bot, update *models.Update) {
