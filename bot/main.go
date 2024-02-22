@@ -22,18 +22,18 @@ import (
 	_ "modernc.org/sqlite"
 )
 
-type appEnv struct {
-	botToken           string   `env:"TELEGRAM_BOT_TOKEN, required"`
-	admins             []string `env:"CONF_ADMINS, required"`
-	confTitle          string   `env:"CONF_TITLE, required"`
-	confLink           *url.URL `env:"CONF_LINK, required"`
-	webhookAddr        *url.URL `env:"VIRTUAL_HOST, required"`
-	confStart          time.Time
-	confEnd            time.Time
-	confratingDeadline time.Time
+type AppEnv struct {
+	BotToken           string   `env:"TELEGRAM_BOT_TOKEN, required"`
+	Admins             []string `env:"CONF_ADMINS, required"`
+	ConfTitle          string   `env:"CONF_TITLE, required"`
+	ConfLink           *url.URL `env:"CONF_LINK, required"`
+	WebhookAddr        *url.URL `env:"VIRTUAL_HOST, required"`
+	ConfStart          time.Time
+	ConfEnd            time.Time
+	ConfratingDeadline time.Time
 }
 
-func (app *appEnv) fromArgs() error {
+func (app *AppEnv) fromArgs() error {
 	if err := envconfig.Process(context.Background(), app); err != nil {
 		return err
 	}
@@ -42,25 +42,25 @@ func (app *appEnv) fromArgs() error {
 	if err != nil {
 		return fmt.Errorf("can't parse conference start: %w", err)
 	}
-	app.confStart = confStart
+	app.ConfStart = confStart
 
 	confEnd, err := time.Parse("02/01/2006 15:04:05", os.Getenv("CONF_END"))
 	if err != nil {
 		return fmt.Errorf("can't parse conference end: %w", err)
 	}
-	app.confEnd = confEnd
+	app.ConfEnd = confEnd
 
 	confRatingDeadline, err := time.Parse("02/01/2006 15:04:05", os.Getenv("CONF_RATING_DEADLINE"))
 	if err != nil {
 		return fmt.Errorf("can't parse conference rating deadline: %w", err)
 	}
-	app.confratingDeadline = confRatingDeadline
+	app.ConfratingDeadline = confRatingDeadline
 
 	return nil
 }
 
 func main() {
-	var app appEnv
+	var app AppEnv
 	err := app.fromArgs()
 	if err != nil {
 		log.Fatalf("can't parse env variables: %s", err.Error())
@@ -112,7 +112,7 @@ func main() {
 		log.Fatalf("can't insert report in db: %s", err.Error())
 	}
 
-	reports, err := stmt.GetAllReports(context.Background(), app.confStart)
+	reports, err := stmt.GetAllReports(context.Background(), app.ConfStart)
 	if err != nil {
 		log.Fatalf("can't fetch reports: %s", err.Error())
 	}
@@ -127,7 +127,7 @@ func main() {
 		bot.WithDefaultHandler(handler),
 	}
 
-	b, err := bot.New(app.botToken, opts...)
+	b, err := bot.New(app.BotToken, opts...)
 	if nil != err {
 		// panics for the sake of simplicity.
 		// you should handle this error properly in your code.
@@ -135,7 +135,7 @@ func main() {
 	}
 
 	b.SetWebhook(ctx, &bot.SetWebhookParams{
-		URL: app.webhookAddr.String() + "/webhook",
+		URL: app.WebhookAddr.String() + "/webhook",
 	})
 
 	go func() {
