@@ -149,7 +149,13 @@ func main() {
 }
 
 func getReportsHandler(ctx context.Context, b *bot.Bot, update *models.Update) {
-	// update.Message.Document.FileID
+	if update.Message.Document == nil {
+		b.SendMessage(ctx, &bot.SendMessageParams{
+			ChatID: update.Message.Chat.ID,
+			Text:   "please upload csv file",
+		})
+		return
+	}
 	fileParams := &bot.GetFileParams{
 		FileID: update.Message.Document.FileID,
 	}
