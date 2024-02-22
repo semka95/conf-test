@@ -17,6 +17,7 @@ import (
 
 	"github.com/go-telegram/bot"
 	"github.com/go-telegram/bot/models"
+	"github.com/jszwec/csvutil"
 	"github.com/sethvargo/go-envconfig"
 	_ "modernc.org/sqlite"
 )
@@ -144,7 +145,104 @@ func main() {
 	// Use StartWebhook instead of Start
 	b.StartWebhook(ctx)
 
-	// call methods.DeleteWebhook if needed
+	b.RegisterHandler(bot.HandlerTypeMessageText, "/sendReports", bot.MatchTypeExact, getReportsHandler)
+}
+
+func getReportsHandler(ctx context.Context, b *bot.Bot, update *models.Update) {
+	// update.Message.Document.FileID
+	fileParams := &bot.GetFileParams{
+		FileID: update.Message.Document.FileID,
+	}
+	file, err := b.GetFile(ctx, fileParams)
+	if err != nil {
+		b.SendMessage(ctx, &bot.SendMessageParams{
+			ChatID: update.Message.Chat.ID,
+			Text:   "can't get file, upload csv file please",
+		})
+		return
+	}
+
+	resp, err := http.Get(b.FileDownloadLink(file))
+	defer resp.Body.Close()
+	if err != nil {
+		b.SendMessage(ctx, &bot.SendMessageParams{
+			ChatID: update.Message.Chat.ID,
+			Text:   "can't download file",
+		})
+		return
+	}
+	data, err := io.ReadAll(resp.Body)
+	if err != nil {
+		b.SendMessage(ctx, &bot.SendMessageParams{
+			ChatID: update.Message.Chat.ID,
+			Text:   "can't read file",
+		})
+		return
+	}
+
+	var talks []Talk
+	if err := csvutil.Unmarshal(data, &talks); err != nil {
+		b.SendMessage(ctx, &bot.SendMessageParams{
+			ChatID: update.Message.Chat.ID,
+			Text:   fmt.Sprintf("can't parse csv: %s", err.Error()),
+		})
+		return
+	}
+
+	for i, v := range talks {
+		fmt.Printf("%d. %+v", i, v)
+	}
+}
+
+type Talk struct {
+	StartingAt      Time            `csv:"Start (MSK Time Zone)"`
+	DurationMinutes DurationMinutes `csv:"Duration (min)"`
+	Title           string          `csv:"Title"`
+	Speakers        string          `csv:"Speakers"`
+	URL             URL             `csv:"URL"`
+}
+
+type Time struct {
+	time.Time
+}
+
+const format = "02/01/2006 15:04:05"
+
+func (t *Time) UnmarshalCSV(data []byte) error {
+	tt, err := time.Parse(format, string(data))
+	if err != nil {
+		return err
+	}
+	*t = Time{Time: tt}
+	return nil
+}
+
+type DurationMinutes struct {
+	time.Duration
+}
+
+func (d *DurationMinutes) UnmarshalCSV(data []byte) error {
+	minutes, err := strconv.Atoi(string(data))
+	if err != nil {
+		return err
+	}
+
+	*d = DurationMinutes{Duration: time.Minute * time.Duration(minutes)}
+	return nil
+}
+
+type URL struct {
+	*url.URL
+}
+
+func (u *URL) UnmarshalCSV(data []byte) error {
+	link, err := url.Parse(string(data))
+	if err != nil {
+		return err
+	}
+
+	*u = URL{URL: link}
+	return nil
 }
 
 func handler(ctx context.Context, b *bot.Bot, update *models.Update) {
